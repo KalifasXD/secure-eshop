@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Catalogue - Secure E-Shop</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<nav class="navbar">
+    <a href="/catalogue" class="brand">Secure E-Shop</a>
+    <div class="nav-links">
+        <a href="/payment">Cart / Payment</a>
+        <form method="post" th:action="@{/logout}" style="margin:0;">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <h1>Product Catalogue</h1>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search products..." />
+            <button class="btn btn-primary" onclick="searchProducts()">Search</button>
+            <button class="btn btn-secondary" onclick="resetSearch()">Reset</button>
+        </div>
+        <p id="search-status" class="search-status">Viewing all products</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="productTable">
+                <tr th:each="product : ${products}">
+                    <td th:text="${product.productName}"></td>
+                    <td th:text="${product.price}"></td>
+                    <td><button class="btn btn-cart" onclick="addToCart(this)" th:data-id="${product.id}">Add to Cart</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="cart-footer" id="cart-footer" th:text="'Cart: ' + ${cartCount} + ' items'">Cart: 0 items</div>
+</div>
+
+<script>
+    function addToCart(button) {
+        const productId = button.getAttribute("data-id");
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+        fetch("/cart/add?productId=" + productId, {
+            method: "POST",
+            headers: { [header]: token }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("cart-footer").textContent = "Cart: " + data.cartCount + " items";
+        });
+    }
+
+    function searchProducts() {
+        const product = document.getElementById("searchInput").value;
+
+        fetch("/catalogue/search?query=" + product, {
+            method: "GET"
+        }).then(response => response.json())
+          .then(data => {
+            const table = document.getElementById("productTable");
+            table.innerHTML = "";
+
+            data.forEach(product => {
+                const row = table.insertRow();
+                row.insertCell().textContent = product.productName;
+                row.insertCell().textContent = product.price;
+                const btnCell = row.insertCell();
+                btnCell.innerHTML = '<button class="btn btn-cart" onclick="addToCart(this)" data-id="' + product.id + '">Add to Cart</button>';
+            });
+
+            document.getElementById("search-status").textContent = "Viewing results for search: " + product;
+          });
+    }
+
+    function resetSearch() {
+        const searchInput = document.getElementById("searchInput");
+        searchInput.value = "";
+
+        fetch("/catalogue/all", {
+            method: "GET"
+        }).then(response => response.json())
+          .then(data => {
+            const table = document.getElementById("productTable");
+            table.innerHTML = "";
+
+            data.forEach(product => {
+                const row = table.insertRow();
+                row.insertCell().textContent = product.productName;
+                row.insertCell().textContent = product.price;
+                const btnCell = row.insertCell();
+                btnCell.innerHTML = '<button class="btn btn-cart" onclick="addToCart(this)" data-id="' + product.id + '">Add to Cart</button>';
+            });
+
+            document.getElementById("search-status").textContent = "Viewing all products";
+          });
+    }
+</script>
+</body>
+</html>

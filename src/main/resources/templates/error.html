@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Error - Secure E-Shop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<nav class="navbar">
+    <a href="/catalogue" class="brand">Secure E-Shop</a>
+</nav>
+
+<div class="container">
+    <div class="card" style="text-align: center;">
+        <h1 th:text="${errorCode}">Error</h1>
+        <p th:text="${errorMessage}">Something went wrong.</p>
+        <a href="/catalogue" class="btn btn-primary">Back to Catalogue</a>
+    </div>
+</div>
+</body>
+</html>

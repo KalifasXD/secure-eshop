@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Payment - Secure E-Shop</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<nav class="navbar">
+    <a href="/catalogue" class="brand">Secure E-Shop</a>
+    <div class="nav-links">
+        <a href="/catalogue">Back to Catalogue</a>
+        <form method="post" th:action="@{/logout}" style="margin:0;">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <h1>Your Cart</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="product : ${productsInCart}">
+                    <td th:text="${product.productName}"></td>
+                    <td th:text="${product.price}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Shipping Address</h2>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="fullName" placeholder="Enter your full name" />
+        </div>
+        <div class="form-group">
+            <label>Street Address</label>
+            <input type="text" id="street" placeholder="Enter your street address" />
+        </div>
+        <div class="form-group">
+            <label>City</label>
+            <input type="text" id="city" placeholder="Enter your city" />
+        </div>
+        <div class="form-group">
+            <label>Postal Code</label>
+            <input type="text" id="postalCode" placeholder="Enter your postal code" />
+        </div>
+        <button class="btn btn-primary" onclick="submitOrder()">Submit Order</button>
+    </div>
+
+    <div id="orderSummary" class="order-summary" style="display:none;">
+        <h2>Order Summary</h2>
+        <p id="summaryAddress"></p>
+        <div id="summaryProducts"></div>
+        <div class="btn-group">
+            <button class="btn btn-confirm" onclick="confirmOrder()">Confirm Order</button>
+            <button class="btn btn-secondary" onclick="cancelOrder()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitOrder() {
+        const fullName = document.getElementById("fullName").value;
+        const street = document.getElementById("street").value;
+        const city = document.getElementById("city").value;
+        const postalCode = document.getElementById("postalCode").value;
+
+        if (!fullName || !street || !city || !postalCode) {
+            alert("Please fill in all address fields.");
+            return;
+        }
+
+        const address = fullName + ", " + street + ", " + city + " " + postalCode;
+        document.getElementById("summaryAddress").textContent = "Ship to: " + address;
+
+        const rows = document.querySelectorAll("tbody tr");
+        const summaryDiv = document.getElementById("summaryProducts");
+        summaryDiv.innerHTML = "";
+        const ul = document.createElement("ul");
+        rows.forEach(row => {
+            const name = row.cells[0].textContent;
+            const price = row.cells[1].textContent;
+            const li = document.createElement("li");
+            li.textContent = name + " - " + price;
+            ul.appendChild(li);
+        });
+        summaryDiv.appendChild(ul);
+
+        document.getElementById("orderSummary").style.display = "block";
+    }
+
+    function confirmOrder() {
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+        const fullName = document.getElementById("fullName").value;
+        const street = document.getElementById("street").value;
+        const city = document.getElementById("city").value;
+        const postalCode = document.getElementById("postalCode").value;
+
+        fetch("/payment/confirm", {
+            method: "POST",
+            headers: {
+                [header]: token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                fullName: fullName,
+                street: street,
+                city: city,
+                postalCode: postalCode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Order confirmed! A confirmation email has been sent.");
+            } else {
+                alert("Something went wrong. Please try again.");
+            }
+        });
+    }
+
+    function cancelOrder() {
+        document.getElementById("orderSummary").style.display = "none";
+    }
+</script>
+</body>
+</html>
